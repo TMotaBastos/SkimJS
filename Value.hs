@@ -4,11 +4,15 @@ data Value = Bool Bool
     | Int Int
     | String String
     | Var String
+    | List Value Value
     | Nil
 
 --
 -- Pretty Printer
 --
+
+instance Eq Value where
+    (==) (Bool v1) (Bool v2) = (v1 == v2)
 
 instance Show Value where 
   show (Bool True) = "true"
@@ -16,6 +20,7 @@ instance Show Value where
   show (Int int) = show int
   show (String str) = "\"" ++ str ++ "\""
   show (Var name) = name
+--  show (List head tail) = (show head)++(show tail)
   show Nil = "undefined"
   
 -- This function could be replaced by (unwords.map show). The unwords

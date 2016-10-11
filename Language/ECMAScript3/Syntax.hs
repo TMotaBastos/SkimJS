@@ -201,18 +201,18 @@ data ForInInit = ForInVar Id -- ^ @var x@
   
 -- | Statements, spec 12.
 data Statement 
-  = BlockStmt [Statement] -- ^ @{stmts}@, spec 12.1
-  | EmptyStmt -- ^ @;@, spec 12.3
-  | ExprStmt Expression -- ^ @expr;@, spec 12.4
-  | IfStmt Expression Statement Statement 
+  = BlockStmt [Statement] -- ^ @{stmts}@, spec 12.1     -- done
+  | EmptyStmt -- ^ @;@, spec 12.3                       -- done
+  | ExprStmt Expression -- ^ @expr;@, spec 12.4         -- done
+  | IfStmt Expression Statement Statement               -- done
     -- ^ @if (e) stmt@, spec 12.5
-  | IfSingleStmt Expression Statement
+  | IfSingleStmt Expression Statement                   -- done
     -- ^ @if (e) stmt1 else stmt2@, spec 12.5
   | SwitchStmt Expression [CaseClause]
     -- ^ @switch (e) clauses@, spec 12.11
-  | WhileStmt Expression Statement
+  | WhileStmt Expression Statement                      -- done
     -- ^ @while (e) do stmt@, spec 12.6
-  | DoWhileStmt Statement Expression
+  | DoWhileStmt Statement Expression                    -- done
     -- ^ @do stmt while (e);@, spec 12.6
   | BreakStmt (Maybe Id) -- ^ @break lab;@, spec 12.8
   | ContinueStmt (Maybe Id) -- ^ @continue lab;@, spec 12.7
@@ -230,11 +230,11 @@ data Statement
     -- ^ @try stmt catch(x) stmt finally stmt@, spec 12.14
   | ThrowStmt Expression
     -- ^ @throw expr;@, spec 12.13
-  | ReturnStmt (Maybe Expression)
+  | ReturnStmt (Maybe Expression)                       -- checar se ta certo
     -- ^ @return expr;@, spec 12.9
   | WithStmt Expression Statement
     -- ^ @with (o) stmt@, spec 12.10
-  | VarDeclStmt [VarDecl]
+  | VarDeclStmt [VarDecl]                               -- done
     -- ^ @var x, y=42;@, spec 12.2
   | FunctionStmt Id {-name-} [Id] {-args-} [Statement] {-body-}
     -- ^ @function f(x, y, z) {...}@, spec 13
