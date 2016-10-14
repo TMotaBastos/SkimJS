@@ -29,10 +29,14 @@ evalExpr env (StringLit str) = return $ String str
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
+
 evalStmt env (VarDeclStmt []) = return Nil
+
 evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
+
 evalStmt env (ExprStmt expr) = evalExpr env expr
+
 evalStmt env (IfSingleStmt expr stmt) = do
     v1 <- evalExpr env expr
     if(v1 == (Bool True)) then
@@ -66,31 +70,46 @@ evalStmt env (DoWhileStmt stmt expr) = do
         evalStmt env (DoWhileStmt stmt expr)
     else
         return Nil
--- checar se ta certo depois
+
 evalStmt env (ReturnStmt maybeExpr) = do
     case maybeExpr of
-        Nothing -> return Nil
-        (Just expr) -> evalExpr env expr
+        Nothing -> return (Return Nil)
+        (Just expr) -> do
+            exprReturn <- evalExpr env expr
+            return (Return exprReturn)
+
+evalStmt env (BreakStmt maybeId) = do
+    case maybeId of
+        Nothing -> return (Break Nothing)
+        (Just idBreak) -> return (Break (Just idBreak))
+
 evalStmt env (ForStmt init maybeExpr1 maybeExpr2 stmt) = do
     forInit env init
     case maybeExpr1 of
         Nothing -> do
-            evalStmt env stmt
-            case maybeExpr2 of
-                Nothing -> evalStmt env (ForStmt init maybeExpr1 maybeExpr2 stmt)
-                Just expr -> do
-                    evalExpr env expr
-                    evalStmt env (ForStmt init maybeExpr1 maybeExpr2 stmt)
+            stmtFor <- evalStmt env stmt
+            case stmtFor of
+                Break idB -> return Nil
+                Return retorno -> return (Return retorno)
+                _ -> do
+                    case maybeExpr2 of
+                        Nothing -> evalStmt env (ForStmt NoInit maybeExpr1 maybeExpr2 stmt)
+                        Just expr -> do
+                            evalExpr env expr
+                            evalStmt env (ForStmt NoInit maybeExpr1 maybeExpr2 stmt)
         Just expr1 -> do
             v1 <- evalExpr env expr1
-            if(v1 == (Bool True)) then
-                do
-                evalStmt env stmt
-                case maybeExpr2 of
-                    Nothing -> evalStmt env (ForStmt init maybeExpr1 maybeExpr2 stmt)
-                    Just expr2 -> do
-                        evalExpr env expr2
-                        evalStmt env (ForStmt init maybeExpr1 maybeExpr2 stmt)
+            if(v1 == (Bool True)) then do
+                stmtFor <- evalStmt env stmt
+                case stmtFor of
+                    Break idB -> return Nil
+                    Return retorno -> return (Return retorno)
+                    _ -> do
+                        case maybeExpr2 of
+                            Nothing -> evalStmt env (ForStmt NoInit maybeExpr1 maybeExpr2 stmt)
+                            Just expr -> do
+                                evalExpr env expr
+                                evalStmt env (ForStmt NoInit maybeExpr1 maybeExpr2 stmt)
             else {--if(v1 == (Bool False))--} return Nil
 -- evalStmt env ()
 
@@ -140,14 +159,13 @@ varDecl env (VarDecl (Id id) maybeExpr) = do
         (Just expr) -> do
             val <- evalExpr env expr
             setVar id val
-            
+     
+forInit :: StateT -> ForInit -> StateTransformer Value       
 forInit env (NoInit) = return Nil
--- como tirar a variavel depois de sair do for?
 forInit env (VarInit []) = return Nil
 forInit env (VarInit (x:xs)) = do
     varDecl env x
     forInit env (VarInit xs)
---
 forInit env (ExprInit expr) = do
     evalExpr env expr
 

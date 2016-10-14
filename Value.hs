@@ -1,10 +1,14 @@
 module Value (Value (..)) where
 
+import Language.ECMAScript3.Syntax
+
 data Value = Bool Bool
     | Int Int
     | String String
     | Var String
     | List Value Value
+    | Return Value
+    | Break (Maybe Id)
     | Nil
 
 --
