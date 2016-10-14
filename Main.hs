@@ -19,9 +19,15 @@ evalExpr env (InfixExpr op expr1 expr2) = do
     v2 <- evalExpr env expr2
     infixOp env op v1 v2
 evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
-    stateLookup env var -- crashes if the variable doesn't exist
+    proc <- stateLookup env var -- crashes if the variable doesn't exist
     e <- evalExpr env expr
-    setVar var e
+    --if(proc == NaoDeclarado) then criarVarGlobal var e
+    --else setVar var e
+    case proc of
+        NaoDeclarado -> criarVarGlobal var e
+        _ -> setVar var e
+--evalExpr env (AssignExpr OpAssign (LBracket expr1 expr2) expr) = do
+--    case
 evalExpr env (StringLit str) = return $ String str
 -- evalExpr env (ArrayLit []) = return Nil
 -- evalExpr env (ArrayLit (x:xs)) = return $ (List (evalExpr env x):(evalExpr env (ArrayLit xs)))
@@ -55,6 +61,10 @@ evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt (x:xs)) = do
     evalStmt env x
     evalStmt env (BlockStmt xs)
+{--evalStmt env (BlockStmt l) = do
+    pushScope
+    evalBlock env l
+    popScope--}
 evalStmt env (WhileStmt expr stmt) = do
     v1 <- evalExpr env expr
     if(v1 == (Bool True)) then
@@ -113,6 +123,12 @@ evalStmt env (ForStmt init maybeExpr1 maybeExpr2 stmt) = do
             else {--if(v1 == (Bool False))--} return Nil
 -- evalStmt env ()
 
+{--evalBlock :: StateT -> [Statement] -> StateTransformer Value
+evalBlock env [] = return Nil
+evalBlock env (x:xs) = do
+    evalStmt env x
+    evalBlock env xs--}
+
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
 evaluate env [] = return Nil
@@ -142,23 +158,33 @@ infixOp env OpLOr  (Bool v1) (Bool v2) = return $ Bool $ v1 || v2
 -- Environment and auxiliary functions
 --
 
-environment :: Map String Value
-environment = Map.empty
+environment :: StateT
+environment = [Map.empty]
 
 stateLookup :: StateT -> String -> StateTransformer Value
 stateLookup env var = ST $ \s ->
     -- this way the error won't be skipped by lazy evaluation
-    case Map.lookup var (union s env) of
+    {--case Map.lookup var (union s env) of
         Nothing -> error $ "Variable " ++ show var ++ " not defiend."
-        Just val -> (val, s)
+        Just val -> (val, s)--}
+    case scopeLookup s var of
+        Nothing -> (NaoDeclarado, s)
+        Just valor -> (valor, s)
+
+scopeLookup :: StateT -> String -> Maybe Value
+scopeLookup [] _ = Nothing
+scopeLookup (e:es) var =
+    case Map.lookup var e of
+        Nothing -> scopeLookup es var
+        Just valor -> Just valor
 
 varDecl :: StateT -> VarDecl -> StateTransformer Value
 varDecl env (VarDecl (Id id) maybeExpr) = do
     case maybeExpr of
-        Nothing -> setVar id Nil
+        Nothing -> criarVarLocal id Nil
         (Just expr) -> do
             val <- evalExpr env expr
-            setVar id val
+            criarVarLocal id val
      
 forInit :: StateT -> ForInit -> StateTransformer Value       
 forInit env (NoInit) = return Nil
@@ -170,13 +196,37 @@ forInit env (ExprInit expr) = do
     evalExpr env expr
 
 setVar :: String -> Value -> StateTransformer Value
-setVar var val = ST $ \s -> (val, insert var val s)
+setVar var val = ST $ \s -> (val, (varProcurarAtualizar var val s))
+
+varProcurarAtualizar :: String -> Value -> StateT -> StateT
+varProcurarAtualizar var _ [] = error $ "Variable " ++ show var ++ " not defined."
+varProcurarAtualizar var valor (e:es) = case (Map.lookup var e) of
+    Nothing -> e:(varProcurarAtualizar var valor es)
+    Just v -> (insert var valor e):es
+
+pushScope :: StateTransformer Value
+pushScope = ST (\estado -> (Nil, (Map.empty):estado))
+
+popScope :: StateTransformer Value
+popScope = ST (\estado -> (Nil, (tail estado)))
+
+criarVarLocal :: String -> Value -> StateTransformer Value
+criarVarLocal var valor = ST (\estado -> (valor, (insert var valor (head estado)):(tail estado)))
+
+criarVarGlobal :: String -> Value -> StateTransformer Value
+criarVarGlobal var valor = ST (\estado -> (valor, criarGlobal var valor estado))
+
+criarGlobal :: String -> Value -> StateT -> StateT
+criarGlobal var valor (e:es) = if(es == []) then
+                                   (insert var valor e):[]
+                               else e:(criarGlobal var valor es)
+
 
 --
 -- Types and boilerplate
 --
 
-type StateT = Map String Value
+type StateT = [Map String Value]
 data StateTransformer t = ST (StateT -> (t, StateT))
 
 instance Monad StateTransformer where
@@ -198,11 +248,13 @@ instance Applicative StateTransformer where
 --
 
 showResult :: (Value, StateT) -> String
-showResult (val, defs) =
-    show val ++ "\n" ++ show (toList $ union defs environment) ++ "\n"
+showResult (val, []) = ""
+showResult (val, (e:es)) = show val ++ "\n" ++ show (toList $ union e (Map.empty)) ++ "\n" ++ showResult (val, es)
+{--showResult (val, defs) =
+    show val ++ "\n" ++ show (toList $ union defs environment) ++ "\n"--}
 
 getResult :: StateTransformer Value -> (Value, StateT)
-getResult (ST f) = f Map.empty
+getResult (ST f) = f [Map.empty]
 
 main :: IO ()
 main = do

@@ -1,4 +1,4 @@
-var x = 10/*, y = 10, z = "asd"*/;
+var x = 10, y = 10/*, z = "asd"*/;
 /*z;
 if(x == 10){
 	x = 1;
@@ -28,4 +28,8 @@ uosdahihasd
 //var a = [1,2,3];
 //for(;x<2;x=x+1){}
 //for(var a = 0;a<10;a++){}
-for(x = 1;x<10;x=x+1){}
+if(x == 10) var y = 1000;
+/*for(x = 1;x<10;x=x+1){
+	var y = 1000;
+}*/
+y;

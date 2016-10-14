@@ -9,14 +9,16 @@ data Value = Bool Bool
     | List Value Value
     | Return Value
     | Break (Maybe Id)
+    | NaoDeclarado
     | Nil
+    deriving (Eq)
 
 --
 -- Pretty Printer
 --
 
-instance Eq Value where
-    (==) (Bool v1) (Bool v2) = (v1 == v2)
+--instance Eq Value where
+--    (==) (Bool v1) (Bool v2) = (v1 == v2)
 
 instance Show Value where 
   show (Bool True) = "true"
@@ -26,6 +28,7 @@ instance Show Value where
   show (Var name) = name
 --  show (List head tail) = (show head)++(show tail)
   show Nil = "undefined"
+  show NaoDeclarado = "Variavel nao Declarada"
   
 -- This function could be replaced by (unwords.map show). The unwords
 -- function takes a list of String values and uses them to build a 
