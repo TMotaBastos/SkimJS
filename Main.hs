@@ -30,16 +30,63 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
 --    case
 evalExpr env (StringLit str) = return $ String str
 
-evalExpr env (ArrayLit []) = return (Array [])
-evalExpr env (ArrayLit a) = evalArray env a (Array [])
+--evalExpr env (ArrayLit []) = return (Array [])
+--evalExpr env (ArrayLit a) = evalArray env a (Array [])
+
 -- evalExpr env (ArrayLit (x:xs)) = return $ (List (evalExpr env x):(evalExpr env (ArrayLit xs)))
 -- evalExpr env (ArrayLit (x:xs)) = return $ List (evalExpr env x) (evalExpr env (ArrayLit xs))
+evalExpr env (UnaryAssignExpr op (LVar var)) = case op of
+    PrefixInc -> evalExpr env (AssignExpr OpAssign (LVar var) (InfixExpr OpAdd (VarRef (Id var)) (IntLit 1)))
+    PrefixDec -> evalExpr env (AssignExpr OpAssign (LVar var) (InfixExpr OpSub (VarRef (Id var)) (IntLit 1)))
+    PostfixInc -> evalExpr env (AssignExpr OpAssign (LVar var) (InfixExpr OpAdd (VarRef (Id var)) (IntLit 1)))
+    PostfixDec -> evalExpr env (AssignExpr OpAssign (LVar var) (InfixExpr OpSub (VarRef (Id var)) (IntLit 1)))
 
-evalArray :: StateT -> [Expression] -> Value -> StateTransformer Value
+evalExpr env (CondExpr cond expr1 expr2) = do
+    v <- evalExpr env cond
+    if(v == (Bool True)) then
+        evalExpr env expr1
+    else if(v == (Bool False)) then
+        evalExpr env expr2
+    else
+        return Nil
+
+evalExpr env (FuncExpr maybeId id stmt) = do
+    case maybeId of
+        Nothing -> return $ Function (Id "fun") id stmt
+        Just v -> return $ Function v id stmt
+
+evalExpr env (CallExpr name args) =
+    case name of
+        -- DotRef?
+        DotRef expr (Id id) -> return Nil
+        _ -> do
+            v <- evalExpr env name
+            case v of
+                (Function nome arguments stmt) -> do
+            --if(v == (Function nome arguments stmt)) then do
+                    pushScope
+                    compareArgs env arguments args
+                    retorno <- evalStmt env (BlockStmt stmt)
+                    --error $ "Loucura meu " ++ show retorno
+                    popScope
+                    case retorno of
+                        Return ret -> return ret
+                        Break b -> error $ "Break usado errado"
+                        _ -> return Nil
+
+compareArgs env [] [] = return Nil
+compareArgs env ((Id name):names) (arg:args) = do
+    v <- evalExpr env arg
+    criarVarLocal name v
+    compareArgs env names args
+compareArgs env _ _ = error $ "Numero de argumentos incompativeis"
+
+--TA DANDO ERRO
+{--evalArray :: StateT -> [Expression] -> Value -> StateTransformer Value
 evalArray env [] (Array a) = return (Array a)
 evalArray env (x:xs) (Array a) = do
     exprArray <- evalExpr env x
-    evalArray env xs (Array (a ++ exprArray))
+    evalArray env xs (Array (a ++ exprArray))--}
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
@@ -67,8 +114,11 @@ evalStmt env (IfStmt expr stmt1 stmt2) = do
         return Nil
 evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt (x:xs)) = do
-    evalStmt env x
-    evalStmt env (BlockStmt xs)
+    v <- evalStmt env x
+    case v of
+        Break b -> return (Break b)
+        Return r -> return (Return r)
+        _ -> evalStmt env (BlockStmt xs)
 {--evalStmt env (BlockStmt l) = do
     pushScope
     evalBlock env l
@@ -129,6 +179,22 @@ evalStmt env (ForStmt init maybeExpr1 maybeExpr2 stmt) = do
                                 evalExpr env expr
                                 evalStmt env (ForStmt NoInit maybeExpr1 maybeExpr2 stmt)
             else {--if(v1 == (Bool False))--} return Nil
+evalStmt env (SwitchStmt expr cases) = do
+    v <- evalExpr env expr
+    searchCase env v cases
+evalStmt env (FunctionStmt (Id name) args body) =
+    criarVarGlobal name (Function (Id name) args body)
+
+searchCase env v [] = return Nil
+searchCase env v (c:cs) = do
+    case c of
+        CaseClause expr stmt -> do
+            v1 <- evalExpr env expr
+            if(v == v1) then evalStmt env (BlockStmt stmt)
+            else searchCase env v cs
+        -- precisa desse do?
+        CaseDefault stmt -> do
+            evalStmt env (BlockStmt stmt)
 -- evalStmt env ()
 
 {--evalBlock :: StateT -> [Statement] -> StateTransformer Value
@@ -236,11 +302,12 @@ igualArray l [] = False
 igualArray (x:xs) (y:ys) | (x == y) = igualArray xs ys
                          | otherwise = False 
 
-buscarElemento :: StateT -> Value -> Value -> StateTransformer Value
+-- TA DANDO ERRO
+{--buscarElemento :: StateT -> Value -> Value -> StateTransformer Value
 buscarElemento env (Array []) (Int n) = return Nil
 buscarElemento env (Array a:as) (Int 0) = return a
 buscarElemento env (Array a:as) (Int n) = do
-    buscarElemento env (Array as) (Int (n-1))
+    buscarElemento env (Array as) (Int (n-1))--}
 
 --
 -- Types and boilerplate

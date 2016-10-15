@@ -9,6 +9,7 @@ data Value = Bool Bool
     | Array [Value]
     | Return Value
     | Break (Maybe Id)
+    | Function Id [Id] [Statement]
     | NaoDeclarado
     | Nil
     deriving (Eq)
@@ -29,6 +30,7 @@ instance Show Value where
 --  show (List head tail) = (show head)++(show tail)
   show Nil = "undefined"
   show NaoDeclarado = "Variavel nao Declarada"
+  show (Function (Id name) args body) = name ++ "(" ++ showArgs args ++ ")"
   
 -- This function could be replaced by (unwords.map show). The unwords
 -- function takes a list of String values and uses them to build a 
@@ -37,3 +39,7 @@ showListContents :: [Value] -> String
 showListContents [] = ""
 showListContents [a] = show a
 showListContents (a:as) = show a ++ ", " ++ (showListContents as)
+
+showArgs :: [Id] -> String
+showArgs [] = ""
+showArgs ((Id arg):args) = arg ++ " , " ++ showArgs args
