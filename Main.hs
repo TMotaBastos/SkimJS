@@ -229,6 +229,18 @@ criarGlobal var valor (e:es) = if(es == []) then
                                    (insert var valor e):[]
                                else e:(criarGlobal var valor es)
 
+igualArray :: [Value] -> [Value] -> Bool
+igualArray [] [] = True
+igualArray [] l = False
+igualArray l [] = False
+igualArray (x:xs) (y:ys) | (x == y) = igualArray xs ys
+                         | otherwise = False 
+
+buscarElemento :: StateT -> Value -> Value -> StateTransformer Value
+buscarElemento env (Array []) (Int n) = return Nil
+buscarElemento env (Array a:as) (Int 0) = return a
+buscarElemento env (Array a:as) (Int n) = do
+    buscarElemento env (Array as) (Int (n-1))
 
 --
 -- Types and boilerplate
