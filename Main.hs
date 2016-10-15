@@ -29,9 +29,17 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
 --evalExpr env (AssignExpr OpAssign (LBracket expr1 expr2) expr) = do
 --    case
 evalExpr env (StringLit str) = return $ String str
--- evalExpr env (ArrayLit []) = return Nil
+
+evalExpr env (ArrayLit []) = return (Array [])
+evalExpr env (ArrayLit a) = evalArray env a (Array [])
 -- evalExpr env (ArrayLit (x:xs)) = return $ (List (evalExpr env x):(evalExpr env (ArrayLit xs)))
 -- evalExpr env (ArrayLit (x:xs)) = return $ List (evalExpr env x) (evalExpr env (ArrayLit xs))
+
+evalArray :: StateT -> [Expression] -> Value -> StateTransformer Value
+evalArray env [] (Array a) = return (Array a)
+evalArray env (x:xs) (Array a) = do
+    exprArray <- evalExpr env x
+    evalArray env xs (Array (a ++ exprArray))
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil

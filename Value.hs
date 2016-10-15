@@ -6,7 +6,7 @@ data Value = Bool Bool
     | Int Int
     | String String
     | Var String
-    | List Value Value
+    | Array [Value]
     | Return Value
     | Break (Maybe Id)
     | NaoDeclarado
