@@ -30,8 +30,8 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
 --    case
 evalExpr env (StringLit str) = return $ String str
 
---evalExpr env (ArrayLit []) = return (Array [])
---evalExpr env (ArrayLit a) = evalArray env a (Array [])
+evalExpr env (ArrayLit []) = return (Array [])
+evalExpr env (ArrayLit a) = evalArray env a (Array [])
 
 -- evalExpr env (ArrayLit (x:xs)) = return $ (List (evalExpr env x):(evalExpr env (ArrayLit xs)))
 -- evalExpr env (ArrayLit (x:xs)) = return $ List (evalExpr env x) (evalExpr env (ArrayLit xs))
@@ -82,11 +82,11 @@ compareArgs env ((Id name):names) (arg:args) = do
 compareArgs env _ _ = error $ "Numero de argumentos incompativeis"
 
 --TA DANDO ERRO
-{--evalArray :: StateT -> [Expression] -> Value -> StateTransformer Value
+evalArray :: StateT -> [Expression] -> Value -> StateTransformer Value
 evalArray env [] (Array a) = return (Array a)
 evalArray env (x:xs) (Array a) = do
     exprArray <- evalExpr env x
-    evalArray env xs (Array (a ++ exprArray))--}
+    evalArray env xs (Array (a ++ [exprArray])) --- ANTES tava a++exprArray
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
@@ -303,11 +303,11 @@ igualArray (x:xs) (y:ys) | (x == y) = igualArray xs ys
                          | otherwise = False 
 
 -- TA DANDO ERRO
-{--buscarElemento :: StateT -> Value -> Value -> StateTransformer Value
+buscarElemento :: StateT -> Value -> Value -> StateTransformer Value
 buscarElemento env (Array []) (Int n) = return Nil
-buscarElemento env (Array a:as) (Int 0) = return a
-buscarElemento env (Array a:as) (Int n) = do
-    buscarElemento env (Array as) (Int (n-1))--}
+buscarElemento env (Array (a:as)) (Int 0) = return a --- ANTES tava (Array a:as)
+buscarElemento env (Array (a:as)) (Int n) = do --- ANTES tava (Array a:as)
+    buscarElemento env (Array as) (Int (n-1))
 
 --
 -- Types and boilerplate
