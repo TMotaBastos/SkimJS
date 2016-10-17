@@ -14,9 +14,12 @@ evalExpr :: StateT -> Expression -> StateTransformer Value
 evalExpr env (VarRef (Id id)) = stateLookup env id
 evalExpr env (IntLit int) = return $ Int int
 evalExpr env (BoolLit bool) = return $ Bool bool
+evalExpr env (NullLit) = return $ Nil
+evalExpr env (NumLit double) = return $ Double double
 evalExpr env (InfixExpr op expr1 expr2) = do
     v1 <- evalExpr env expr1
     v2 <- evalExpr env expr2
+    --error $ "v1 = " ++ show v1 ++ " v2 = " ++ show v2 ++ " " ++ show op
     infixOp env op v1 v2
 
 evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
@@ -48,6 +51,10 @@ evalExpr env (UnaryAssignExpr op (LVar var)) = case op of
     PrefixDec -> evalExpr env (AssignExpr OpAssign (LVar var) (InfixExpr OpSub (VarRef (Id var)) (IntLit 1)))
     PostfixInc -> evalExpr env (AssignExpr OpAssign (LVar var) (InfixExpr OpAdd (VarRef (Id var)) (IntLit 1)))
     PostfixDec -> evalExpr env (AssignExpr OpAssign (LVar var) (InfixExpr OpSub (VarRef (Id var)) (IntLit 1)))
+
+evalExpr env (PrefixExpr op expr) = do
+    v1 <- evalExpr env expr
+    prefixOp env op v1
 
 evalExpr env (CondExpr cond expr1 expr2) = do
     v <- evalExpr env cond
@@ -240,6 +247,24 @@ infixOp env OpEq   (Bool v1) (Bool v2) = return $ Bool $ v1 == v2
 infixOp env OpNEq  (Bool v1) (Bool v2) = return $ Bool $ v1 /= v2
 infixOp env OpLAnd (Bool v1) (Bool v2) = return $ Bool $ v1 && v2
 infixOp env OpLOr  (Bool v1) (Bool v2) = return $ Bool $ v1 || v2
+infixOp env OpEq   (Nil)     (Nil)     = return $ Bool $ True
+infixOp env OpEq   (_)       (Nil)     = return $ Bool $ False
+infixOp env OpAdd  (Double  v1) (Double  v2) = return $ Double  $ v1 + v2
+infixOp env OpSub  (Double  v1) (Double  v2) = return $ Double  $ v1 - v2
+infixOp env OpMul  (Double  v1) (Double  v2) = return $ Double  $ v1 * v2
+infixOp env OpLT   (Double  v1) (Double  v2) = return $ Bool $ v1 < v2
+infixOp env OpLEq  (Double  v1) (Double  v2) = return $ Bool $ v1 <= v2
+infixOp env OpGT   (Double  v1) (Double  v2) = return $ Bool $ v1 > v2
+infixOp env OpGEq  (Double  v1) (Double  v2) = return $ Bool $ v1 >= v2
+infixOp env OpEq   (Double  v1) (Double  v2) = return $ Bool $ v1 == v2
+
+
+prefixOp :: StateT -> PrefixOp -> Value -> StateTransformer Value
+prefixOp env PrefixLNot (Bool v) = return $ Bool $ not v
+prefixOp env PrefixMinus (Int v) = return $ Int $ (-v)
+prefixOp env PrefixMinus (Double v) = return $ Double $ (-v)
+prefixOp env PrefixPlus (Int v) = return $ Int $ v
+prefixOp env PrefixPlus (Double v) = return $ Double $ v
 
 --
 -- Environment and auxiliary functions

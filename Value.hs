@@ -4,6 +4,7 @@ import Language.ECMAScript3.Syntax
 
 data Value = Bool Bool
     | Int Int
+    | Double Double
     | String String
     | Var String
     | Array [Value]
@@ -33,6 +34,7 @@ instance Show Value where
   show NaoDeclarado = "Variavel nao Declarada"
   show (Function (Id name) args body) = name ++ "(" ++ showArgs args ++ ")"
   show (Array a) = "[ " ++ (showArray (Array a)) ++ " ]"
+  show (Double double) = show double
   
 -- This function could be replaced by (unwords.map show). The unwords
 -- function takes a list of String values and uses them to build a 
