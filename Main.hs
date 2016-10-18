@@ -18,9 +18,14 @@ evalExpr env (NullLit) = return $ Nil
 evalExpr env (NumLit double) = return $ Double double
 evalExpr env (InfixExpr op expr1 expr2) = do
     v1 <- evalExpr env expr1
-    v2 <- evalExpr env expr2
+    case v1 of
+        NaoDeclarado -> error $ "Nao Declarado"
+        _ -> do
+                 v2 <- evalExpr env expr2
+                 case v2 of
+                     NaoDeclarado -> error $ "Nao Declarado"
+                     _ -> infixOp env op v1 v2
     --error $ "v1 = " ++ show v1 ++ " v2 = " ++ show v2 ++ " " ++ show op
-    infixOp env op v1 v2
 
 evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     proc <- stateLookup env var -- crashes if the variable doesn't exist
@@ -103,6 +108,15 @@ evalExpr env (BracketRef expr1 expr2) = do
     v2 <- evalExpr env expr2
     evalElementAt env v1 v2
 
+evalExpr env (DotRef expr (Id id)) = do
+    arr <- evalExpr env expr
+    case arr of
+        Array l -> do
+            case id of
+                "head" -> return (head l)
+                "tail" -> return (Array (tail l))
+                _ -> error $ "Funcao Desconhecida"
+
 evalElementAt :: StateT -> Value -> Value -> StateTransformer Value
 evalElementAt env (Array []) (Int n) = return Nil
 evalElementAt env (Array (a:as)) (Int 0) = return a  
@@ -154,8 +168,11 @@ evalStmt env (WhileStmt expr stmt) = do
     v1 <- evalExpr env expr
     if(v1 == (Bool True)) then
         do
-            evalStmt env stmt
-            evalStmt env (WhileStmt expr stmt)
+            v2 <- evalStmt env stmt
+            case v2 of
+                Break b -> return (Break b)
+                Return r -> error $ "Return no Lugar Errado"
+                _ -> evalStmt env (WhileStmt expr stmt)
     else
         return Nil
 evalStmt env (DoWhileStmt stmt expr) = do
@@ -244,6 +261,7 @@ infixOp env OpGT   (Int  v1) (Int  v2) = return $ Bool $ v1 > v2
 infixOp env OpGEq  (Int  v1) (Int  v2) = return $ Bool $ v1 >= v2
 infixOp env OpEq   (Int  v1) (Int  v2) = return $ Bool $ v1 == v2
 infixOp env OpEq   (Bool v1) (Bool v2) = return $ Bool $ v1 == v2
+infixOp env OpNEq  (Int  v1) (Int  v2) = return $ Bool $ not (v1 == v2)
 infixOp env OpNEq  (Bool v1) (Bool v2) = return $ Bool $ v1 /= v2
 infixOp env OpLAnd (Bool v1) (Bool v2) = return $ Bool $ v1 && v2
 infixOp env OpLOr  (Bool v1) (Bool v2) = return $ Bool $ v1 || v2

@@ -35,6 +35,7 @@ instance Show Value where
   show (Function (Id name) args body) = name ++ "(" ++ showArgs args ++ ")"
   show (Array a) = "[ " ++ (showArray (Array a)) ++ " ]"
   show (Double double) = show double
+  show (Break b) = "Deu break"
   
 -- This function could be replaced by (unwords.map show). The unwords
 -- function takes a list of String values and uses them to build a 

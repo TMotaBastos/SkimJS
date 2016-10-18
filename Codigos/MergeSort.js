@@ -3,62 +3,55 @@ function len(arr, pos){
 	return len(arr,(pos+1));
 }
 
-function floorf(num){
-	return (num%1);
+function partir(arr, ini, fim){
+	var brr = [], cont = 0;
+	for(var k = ini; k < fim; k++){
+		brr[cont] = arr[k];
+		cont++;
+	}
+	return brr;
 }
 
-function merge(arr, ini, mid, fim, brr){
-	var i = ini, j = (mid+1);
-	for(var k = ini; k <= fim; k++){
-		if(i < (mid+1) && (j >= fim || arr[i] <= arr[j])){
-			brr[k] = arr[i];
-			i++;
+function mergesort(arr){
+	var tam = len(arr,0);
+	if(tam < 2) return arr;
+	var mid;
+	if(tam%2 == 1) mid = (tam-1)/2;
+	else mid = tam/2;
+	var l = partir(arr, 0, mid);
+	var r = partir(arr, mid, tam);
+	return merge(mergesort(l), mergesort(r));
+}
+
+function merge(l, r){
+	var result = [], cont = 0, taml = len(l, 0), tamr = len(r, 0), pl = 0, pr = 0;
+	while((taml > 0) && (tamr > 0)){
+		if(l[pl] <= r[pr]){
+			result[cont] = l[pl];
+			taml--;
+			pl++;
+			cont++;
 		}else{
-			brr[k] = arr[j];
-			j++;
+			result[cont] = r[pr];
+			tamr--;
+			pr++;
+			cont++;
 		}
 	}
-	for(var k = ini; k <= fim; k++){
-		arr[k] = brr[k];
+	while(taml > 0){
+		result[cont] = l[pl];
+		taml--;
+		pl++;
+		cont++;
 	}
-	//return brr;
+	while(tamr > 0){
+		result[cont] = r[pr];
+		tamr--;
+		pr++;
+		cont++;
+	}
+	return result;
 }
-
-function mergesort(arr, ini, fim, brr){
-	if(fim - ini == 0) return;
-	var mid = (ini+fim)/2;
-	mergesort(arr, ini, mid, brr);
-	mergesort(arr, (mid+1), fim, brr);
-	merge(arr, ini, mid, fim, brr);
-}
-
-3 1 2
-3   1 2
-3   1   2
-3   1 2
-
-5 4 6 7
-
-4 5    6 7
-      ij
-4 5 6 7
-
-
-4 5   8 6
-    i j
-4 5 8 6
-
-
-5 4 8 6
-4  5  8  6
-   ij
-4 5   6  8
-        ij
-4 5   6 8
-  i   j
-  
-8 4 6 5
-8  4  6  5
-4 5   8 6
-      i j
-
+var a = [5,6,1,2,8,7,10,3,9,4];
+var top = mergesort(a);
+top;
