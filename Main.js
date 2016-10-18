@@ -187,6 +187,8 @@ somaArray(x);*/
       return "Sexta-feira";
     case 7:
       return "Sábado";
+    default:
+      return "Dia inválido";
   }
 }
 
@@ -212,4 +214,18 @@ function palindrome(a){
 
 var a = [5,7,5];
 var x = palindrome(a);
-x;*/
+x;
+*/
+
+// ----- Danilo -----
+/*var a = 20;
+
+function teste(){
+	var b = a + 50;
+	return (b+30);
+}
+
+var m = teste();
+m;
+*/
+

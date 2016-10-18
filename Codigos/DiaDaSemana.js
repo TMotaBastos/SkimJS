@@ -14,6 +14,8 @@ function diaSemana(a){
       return "Sexta-feira";
     case 7:
       return "Sábado";
+    default:
+      return "Dia inválido";
   }
 }
 
