@@ -229,3 +229,15 @@ var m = teste();
 m;
 */
 
+var a = 10;
+for(var i = 0;;i++){
+	if(i>3){
+		break;
+	}else{
+		a++;
+	}
+}
+
+a;
+
+

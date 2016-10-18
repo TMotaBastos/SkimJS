@@ -1,4 +1,4 @@
-var a = 10;
+var a = 20;
 
 function teste(){
 	var b = a + 50;
